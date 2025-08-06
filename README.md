@@ -14,6 +14,8 @@ The class "hypergraph" is used to store the raw hypergraph as a set of integer v
 The class "bipartite_02" which is derived from class bipartite_graph and implement the algorithm
 * "find_uncovering_hitting_set" which find an uncovering hitting set if any
 
+The directory "saved_hypergraphs" contains several hypergraphs used in the experiments. the format is a simple maps containing two keys: "n": the number of vertices of the hypergraph, and "psi" a vector of integer vectors.
+
 # Dependencies
 The GMP libreries are used for arbitrary aritmetic precision. The header "json.hpp2 is used for dealing with JSON file format.
 
