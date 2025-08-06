@@ -136,9 +136,9 @@ void run_multiple_test(const string& fname, const vector<string>& hypergraphs) {
 
 int main() {
     const vector<string> fname = {
-        "../saved_hypergraphs/hypergraph_r/hypergraph_random_2025_04_28_19_39_28_6.json",
-        "../saved_hypergraphs/hypergraph_r/hypergraph_random_2025_04_28_19_39_28_7.json",
-        "../saved_hypergraphs/hypergraph_r/hypergraph_random_2025_04_28_19_39_28_8.json"
+        "../saved_hypergraphs/hypergraphs_r/hypergraph_random_2025_04_28_19_39_28_6.json",
+        "../saved_hypergraphs/hypergraphs_r/hypergraph_random_2025_04_28_19_39_28_7.json",
+        "../saved_hypergraphs/hypergraphs_r/hypergraph_random_2025_04_28_19_39_28_8.json"
     };
     run_multiple_test("test.csv", fname);
 
