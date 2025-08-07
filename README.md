@@ -5,7 +5,7 @@ Implementation in c++ of algorithms for solving the dualization problem for posi
 The code provided is the implementation af some algorithms for the decision version of the dualization problem for positive Boolean function. There are tree classes: "bipartite_graph" used to deal with the bipartite representation of a hypergraph. In this class are implemented the algorithm:
 * "compute_number_hitting_sets" which computes the number of hitting sets of a hypergraph
   
-The class "hypergraph" is used to store the raw hypergraph as a set of integer vectors.In this class are implemented the algorithm:
+The class "hypergraph" is used to store the raw hypergraph as a set of integer vectors. In this class are implemented the algorithms:
 * "generate_random_comb_new" generate hypergraph with specified type of hyperedges using uniform random distribution
 * "generate_random_exponential" generate hypergraph with specified type of hyperedges using exponential random distribution
 * "search_x" search for a $x$ such that $f(x)=f(\overline{x})$
