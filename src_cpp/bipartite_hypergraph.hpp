@@ -22,16 +22,6 @@ using namespace std;
 // Helper function templates
 pair<vector<uint8_t>, int> int_to_bits(int x, int size);
 
-/*
-template <typename T>
-void generate_combinations(const vector<T>& elements, int k, int start_index,
-                           vector<T>& current_combination,
-                           vector<vector<T>>& result);
-
-template <typename T>
-vector<vector<T>> combinations(const vector<T>& elements, int k);
-*/
-
 set<int> vec_to_set(const vector<int>& v);
 
 struct VectorIntCompare {
@@ -130,37 +120,7 @@ public:
 void reduce_minimal(vector<vector<int>>& E);
 bool algorithm_A(vector<vector<int>> F, vector<vector<int>> G);
 
-
-
 // Template implementations must be in the header
-
-/*
-template <typename T>
-void generate_combinations(const vector<T>& elements, int k, int start_index,
-                           vector<T>& current_combination,
-                           vector<vector<T>>& result) {
-    if (current_combination.size() == k) {
-        result.push_back(current_combination);
-        return;
-    }
-    for (int i = start_index; i < elements.size(); ++i) {
-        current_combination.push_back(elements[i]);
-        generate_combinations(elements, k, i + 1, current_combination, result);
-        current_combination.pop_back();
-    }
-}
-
-template <typename T>
-vector<vector<T>> combinations(const vector<T>& elements, int k) {
-    vector<vector<T>> result;
-    if (k < 0 || k > elements.size()) {
-        return result;
-    }
-    vector<T> current_combination;
-    generate_combinations(elements, k, 0, current_combination, result);
-    return result;
-}
-*/
 
 template <typename T>
 class CombinationGenerator {
