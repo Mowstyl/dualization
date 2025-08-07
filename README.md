@@ -13,6 +13,8 @@ The class "hypergraph" is used to store the raw hypergraph as a set of integer v
 
 The class "bipartite_02" which is derived from class bipartite_graph and implement the algorithm
 * "find_uncovering_hitting_set" which find an uncovering hitting set if any
+  
+In the file "bipartite_hypergraph.cpp" there is also an implementation of the algorithm A of paper [1]    
 
 The directory "saved_hypergraphs" contains several hypergraphs used in the experiments. The JSON file is a simple maps containing two keys: "n": the number of vertices of the hypergraph; "psi": a vector of integer vectors.
 
@@ -22,3 +24,8 @@ The GMP libreries are used for arbitrary aritmetic precision. The header "json.h
 # Usage
 Run "experiment_prod_ver1.5" to execute some algorithms on some hypergraphs.
 Run "generate_hypergraph_ver1.0" to randomly generate and save hypergraphs.
+
+
+# Bibliography
+[1] Fredman, M.L., Khachiyan, L.: On the complexity of dualization of 
+      monotone disjunctive normal forms. J. Algorithms 21(3), 618–628 (1996)
