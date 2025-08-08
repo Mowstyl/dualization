@@ -11,8 +11,8 @@ The class "hypergraph" is used to store the raw hypergraph as a set of integer v
 * "search_x" search for a $x$ such that $f(x)=f(\overline{x})$
 * "sum_f" computes $\sum_{x=0}^{2^{n}-1} [1-f(x)]$ 
 
-The class "bipartite_02" which is derived from class bipartite_graph and implement the algorithm
-* "find_uncovering_hitting_set" which find an uncovering hitting set if any
+The class "bipartite_02" which is derived from class bipartite_graph and implements the algorithm
+* "find_uncovering_hitting_set" which find an uncovering hitting set if any exists in the hypergraph
   
 In the file "bipartite_hypergraph.cpp" there is also an implementation of the algorithm A of paper [1]    
 
