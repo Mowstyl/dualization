@@ -25,6 +25,8 @@ The GMP libreries are used for arbitrary aritmetic precision. The header "json.h
 Run "experiment_prod_ver1.5" to execute some algorithms on some hypergraphs.
 Run "generate_hypergraph_ver1.0" to randomly generate and save hypergraphs.
 
+A Makefile is provided to build the code.
+
 
 # Bibliography
 [1] Fredman, M.L., Khachiyan, L.: On the complexity of dualization of 
