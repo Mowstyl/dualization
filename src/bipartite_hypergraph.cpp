@@ -1351,6 +1351,146 @@ pair<bool, vector<uint8_t>> hypergraph::search_x() {
     return {true, {}}; // Return true and an empty vector if no such x is found
 }
 
+unsigned long long combinations(int n, int k) {
+    if (k > n)
+		return 0;
+	if (k * 2 > n)
+		k = n - k;
+    if (k == 0)
+		return 1;
+	
+    unsigned long long result = n;
+    for(int i = 2; i <= k; ++i ) {
+        result *= (n - i + 1);
+		result /= i;
+	}
+	
+    return result;
+}
+
+
+vector<int> ith_combination(int n, int k, unsigned long long i) {
+    vector<int> result;
+    int current = 0;
+	unsigned long long count;
+    
+    for (int remaining = k; remaining > 0; ++current) {
+        count = combinations(n - 1 - current, remaining - 1);
+		
+        if (i < count) {
+            result.push_back(current);
+            --remaining;
+        }
+		else {
+            i -= count;
+        }
+    }
+	assert((int)result.size() == k);
+    return result;
+}
+
+pair<bool, vector<uint8_t>> hypergraph::search_x_par() {
+    /* This function searches for a binary vector x of length n such that
+        f(x) = f(\overline{x}) = 0, where \overline{x} is the complement of x.
+        It returns a pair containing a boolean indicating if such x exists and the vector x itself.
+        If no such x is found, it returns true and an empty vector.
+
+        The function iterates through all combinations of vertices in the hypergraph
+        and checks if the intersection property holds. If it finds a valid x, it returns it.
+        
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        pair<bool, vector<uint8_t>>
+            A pair where the first element is true if no such x is found,
+            and the second element is the binary vector x if found.
+            If no such x is found, the second element is an empty vector.
+        The function assumes that psi is ordered by length and lexicographically.
+        It is mandatory that psi is ordered by length and lexicographically
+        for this function to properly work.
+        The function uses the evaluate_f function to check if f(x) = 0 or 1.
+        It also uses the min_length_hyperedge function to determine the minimum length of
+        hyperedges in psi, which is used to optimize the search.
+        
+    */
+
+    int min_len = 0;
+    if (!psi.empty()) {
+        min_len = min_length_hyperedge().size();
+    }
+
+    int w = n / 2;
+
+    vector<int> range_n(n);
+    iota(range_n.begin(), range_n.end(), 0);
+
+    for (int i = 1; i <= w; ++i) {
+        volatile bool flag = false;
+		volatile bool exit = false;
+		vector<uint8_t> out_x(n, 0);
+		unsigned long long num_combs = combinations(n, i);
+		#pragma omp parallel for shared(exit, flag, out_x)
+        for (unsigned long long cid = 0; cid < num_combs; cid++) {
+			if (flag || exit)
+				continue;
+            vector<int> v_indices = ith_combination(n, i, cid);
+
+            // Check if n is even and if we are at the half-way point.
+            if (n % 2 == 0 && i == w && v_indices[0] != 0) {
+				flag = true;
+                continue;
+            }
+
+            vector<uint8_t> x(n, 0);
+            for (int idx : v_indices) {
+				if (idx < 0 || idx >= n) {
+					cerr << "Error: índice fuera de rango " << idx << " para n=" << n << ", i=" << i << ", cid=" << cid << endl;
+					abort();
+				}
+				x[idx] = 1;
+            }
+
+            if (i < min_len) {
+                vector<uint8_t> one_minus_x(n);
+                for (int k = 0; k < n; ++k) {
+                    one_minus_x[k] = 1 - x[k];
+                }
+                int w_val = n - i;
+                if (evaluate_f(one_minus_x, w_val) == 0) {
+					#pragma omp critical(outXCopy)
+					if (!exit) {
+						exit = true;
+						copy(x.begin(), x.end(), out_x.begin());
+					}
+                }
+            } else {
+                if (evaluate_f(x, i) == 0) {
+                //if (evaluate_f_old(x) == 0) {
+                    vector<uint8_t> one_minus_x(n);
+                    for (int k = 0; k < n; ++k) {
+                        one_minus_x[k] = 1 - x[k];
+                    }
+                    int w_val = n - i;
+                    if (evaluate_f(one_minus_x, w_val) == 0) {
+                    //if (evaluate_f_old(one_minus_x) == 0) {
+						#pragma omp critical(outXCopy)
+						if (!exit) {
+							exit = true;
+							copy(x.begin(), x.end(), out_x.begin());
+						}
+                    }
+                }
+            }
+        }
+		if (exit)
+            return {false, out_x};
+    }
+    return {true, {}}; // Return true and an empty vector if no such x is found
+}
+
 bool hypergraph::check_counter_example(const vector<uint8_t>& x) {
     /*  The PIDNF psi satisfies the intersection property
         that is for every two hyperedges I and J in psi

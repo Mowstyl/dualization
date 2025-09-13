@@ -104,6 +104,7 @@ public:
     int evaluate_f(const vector<uint8_t>& x_vec, int & w);
     mpz_class sum_f();
     pair<bool, vector<uint8_t>> search_x();
+    pair<bool, vector<uint8_t>> search_x_par();
     bool check_counter_example(const vector<uint8_t>& x);
     size_t count_vertices();
     vector<vector<int>> get_ordered_list_psi();
