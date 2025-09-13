@@ -1,72 +1,75 @@
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <filesystem>
+#include "bipartite_02.hpp"
+#include "bipartite_hypergraph.hpp"
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <map>
 #include <random>
 #include <sstream>
-#include "bipartite_hypergraph.hpp"
-#include "bipartite_02.hpp"
+#include <string>
+#include <vector>
 
 using namespace std;
 
 // Write a row to a CSV file
-void write_csv_row(ofstream& file, const vector<string>& row) {
+void write_csv_row(ofstream &file, const vector<string> &row) {
     for (size_t i = 0; i < row.size(); ++i) {
         file << row[i];
-        if (i + 1 < row.size()) file << ";";
+        if (i + 1 < row.size())
+            file << ";";
     }
     file << "\n";
 }
 
 // Implementation of the algorithm execution
-vector<string> execute_algorithm(int algorithm_num, bipartite_graph& b, hypergraph& g) {
+vector<string> execute_algorithm(int algorithm_num, bipartite_graph &b,
+                                 hypergraph &g) {
     string name;
     double elapsed = 0.0;
     string output = "";
-    // Prepare data for algorithm_A: convert psi (set of vector) to vector of vector
+    // Prepare data for algorithm_A: convert psi (set of vector) to vector of
+    // vector
     vector<vector<int>> F(g.psi.begin(), g.psi.end());
-    
+
     auto start = chrono::high_resolution_clock::now();
     if (algorithm_num == 0) {
         name = "algorithm A";
         output = to_string(algorithm_A(F, F));
-    }
-	else if (algorithm_num == 1) {
+    } else if (algorithm_num == 1) {
         name = "hitting set algorithm";
         output = b.compute_number_hitting_sets().get_str();
-    }
-	else if (algorithm_num == 2) {
+    } else if (algorithm_num == 2) {
         name = "search x";
-		auto search_result = g.search_x();
-		ostringstream oss;
-		oss << (search_result.first ? "self-dual" : "not self-dual");
-		if (!search_result.first) {
-			oss << " [";
-			for (size_t i = 0; i < search_result.second.size(); ++i) {
-				oss << to_string(search_result.second[i]);
-				if (i + 1 < search_result.second.size()) oss << ",";
-			}
-			oss << "]";
-		}
-		output = oss.str();
+        auto search_result = g.search_x();
+        ostringstream oss;
+        oss << (search_result.first ? "self-dual" : "not self-dual");
+        if (!search_result.first) {
+            oss << " [";
+            for (size_t i = 0; i < search_result.second.size(); ++i) {
+                oss << to_string(search_result.second[i]);
+                if (i + 1 < search_result.second.size())
+                    oss << ",";
+            }
+            oss << "]";
+        }
+        output = oss.str();
     } else if (algorithm_num == 3) {
         name = "search x parallel";
-		auto search_result = g.search_x_par();
-		ostringstream oss;
-		oss << (search_result.first ? "self-dual" : "not self-dual");
-		if (!search_result.first) {
-			oss << " [";
-			for (size_t i = 0; i < search_result.second.size(); ++i) {
-				oss << to_string(search_result.second[i]);
-				if (i + 1 < search_result.second.size()) oss << ",";
-			}
-			oss << "]";
-		}
-		output = oss.str();
+        auto search_result = g.search_x_par();
+        ostringstream oss;
+        oss << (search_result.first ? "self-dual" : "not self-dual");
+        if (!search_result.first) {
+            oss << " [";
+            for (size_t i = 0; i < search_result.second.size(); ++i) {
+                oss << to_string(search_result.second[i]);
+                if (i + 1 < search_result.second.size())
+                    oss << ",";
+            }
+            oss << "]";
+        }
+        output = oss.str();
     } else if (algorithm_num == 4) {
         name = "find_uncovering_hitting_set";
         vector<vector<int>> H = g.get_ordered_list_psi();
@@ -78,7 +81,8 @@ vector<string> execute_algorithm(int algorithm_num, bipartite_graph& b, hypergra
             int i = 0;
             oss << " [";
             for (int v : b2.counter_example) {
-                if (i>0) oss << ",";
+                if (i > 0)
+                    oss << ",";
                 i++;
                 oss << to_string(v);
             }
@@ -88,12 +92,11 @@ vector<string> execute_algorithm(int algorithm_num, bipartite_graph& b, hypergra
     } else if (algorithm_num == 5) {
         name = "sum_f";
         output = g.sum_f().get_str();
-    }
-    else {
+    } else {
         cerr << "Unknown algorithm number: " << algorithm_num << endl;
         return {};
     }
-    
+
     auto end = chrono::high_resolution_clock::now();
     elapsed = chrono::duration<double>(end - start).count();
 
@@ -101,8 +104,7 @@ vector<string> execute_algorithm(int algorithm_num, bipartite_graph& b, hypergra
     return {name, to_string(elapsed), output};
 }
 
-
-void run_multiple_test(const string& fname, const vector<string>& hypergraphs) {
+void run_multiple_test(const string &fname, const vector<string> &hypergraphs) {
 
     ofstream csvFile(fname, ios::app);
     if (!csvFile.is_open()) {
@@ -111,7 +113,7 @@ void run_multiple_test(const string& fname, const vector<string>& hypergraphs) {
     }
 
     hypergraph g(0);
-    for (const string& filepath : hypergraphs) {
+    for (const string &filepath : hypergraphs) {
         string filename = filesystem::path(filepath).filename().string();
         string datetime_string = get_datetime_string();
         g.load(filepath);
@@ -119,18 +121,17 @@ void run_multiple_test(const string& fname, const vector<string>& hypergraphs) {
         auto st = g.stat();
         bipartite_graph b(g.get_ordered_list_psi());
         cout << "hypergraph : " << filename << endl;
-        cout << "Number of vertices: " << n << "; Number of hyperedges : " << b.Edges.size() << endl;
+        cout << "Number of vertices: " << n
+             << "; Number of hyperedges : " << b.Edges.size() << endl;
 
-        vector<string> row_head = {
-            filename,
-            datetime_string,
-            to_string(static_cast<int>(st["n"])),
-            to_string(static_cast<int>(st["m"])),
-            to_string(static_cast<int>(st["min_edge"])),
-            to_string(static_cast<int>(st["max_edge"])),
-            to_string(st["avg"])
-        };
-        
+        vector<string> row_head = {filename,
+                                   datetime_string,
+                                   to_string(static_cast<int>(st["n"])),
+                                   to_string(static_cast<int>(st["m"])),
+                                   to_string(static_cast<int>(st["min_edge"])),
+                                   to_string(static_cast<int>(st["max_edge"])),
+                                   to_string(st["avg"])};
+
         for (int algorithm_num = 0; algorithm_num < 6; ++algorithm_num) {
             auto row = execute_algorithm(algorithm_num, b, g);
             vector<string> new_row = row_head;
@@ -139,44 +140,45 @@ void run_multiple_test(const string& fname, const vector<string>& hypergraphs) {
         }
 
         cout << "----------------------------------------" << endl;
-
     }
     csvFile.close();
 }
 
-
 bool ends_with(string const &fullString, string const &ending) {
     if (fullString.length() >= ending.length())
-        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+        return (0 == fullString.compare(fullString.length() - ending.length(),
+                                        ending.length(), ending));
     else
         return false;
 }
 
-
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     if (argc < 2) {
-        cout << "Syntax: " << argv[0] << " <hypergraph json 1> ... <hypergraph json n> [output file (optional)]" << endl;
+        cout << "Syntax: " << argv[0]
+             << " <hypergraph json 1> ... <hypergraph json n> [output file "
+                "(optional)]"
+             << endl;
         return 0b00000001;
-	}
-	int aux = argc - 1;
-	string out_file = argv[argc - 1];
-	if (argc == 2 || !ends_with(out_file, ".csv")) {
-		const auto tp_utc{chrono::system_clock::now()};
-		auto in_time_t = chrono::system_clock::to_time_t(tp_utc);
-		stringstream ss;
-		
-		ss << put_time(localtime(&in_time_t), "%Y%m%d%H%M%S");
-		out_file = "test_" + ss.str() + ".csv";
-		cout << "Using default outfile: " << out_file << endl;
-		aux++;
-	}
+    }
+    int aux = argc - 1;
+    string out_file = argv[argc - 1];
+    if (argc == 2 || !ends_with(out_file, ".csv")) {
+        const auto tp_utc{chrono::system_clock::now()};
+        auto in_time_t = chrono::system_clock::to_time_t(tp_utc);
+        stringstream ss;
+
+        ss << put_time(localtime(&in_time_t), "%Y%m%d%H%M%S");
+        out_file = "test_" + ss.str() + ".csv";
+        cout << "Using default outfile: " << out_file << endl;
+        aux++;
+    }
     const vector<string> fnames(argv + 1, argv + aux);
-	//{
+    //{
     //    "../saved_hypergraphs/hypergraphs_r/hypergraph_random_2025_04_28_19_39_28_6.json",
     //    "../saved_hypergraphs/hypergraphs_r/hypergraph_random_2025_04_28_19_39_28_7.json",
     //    "../saved_hypergraphs/hypergraphs_r/hypergraph_random_2025_04_28_19_39_28_8.json"
     //};
-	run_multiple_test(out_file, fnames);
-	
-    return EXIT_SUCCESS; 
+    run_multiple_test(out_file, fnames);
+
+    return EXIT_SUCCESS;
 }
