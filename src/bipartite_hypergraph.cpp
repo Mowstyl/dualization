@@ -1,4 +1,5 @@
 #include "bipartite_hypergraph.hpp"
+#include <omp.h>
 
 pair<vector<uint8_t>, int> mpz_to_bits(const mpz_class &num, int size) {
 
@@ -948,6 +949,56 @@ void hypergraph::generate_random_comb(int d_1, int d_2, int l) {
 }
 
 void hypergraph::generate_random_comb_new(int d_1, int d_2, long long l) {
+
+    /*
+        Take as input two integer $d_1$ and $d_2$ such that $0 < d_1 < d_2 < n$.
+        Generate random hyperedges for a random binary vector with a number of
+       ones between d_1 and d_2. The procedure generate a uniform random number
+       $d_1 \leq j \leq d_2$ and from that number $j$ determine a random binary
+       vector e_bits of dimension $n$ with $j$ ones. The hyperedge $e$ contains
+       a vertex $v$ iff e_bits[v]==1. The generated hyperedge is added to
+       self.psi provided the intersection property is satisfied. Such procedure
+       is iterated up to $l$ times.
+
+        Parameters
+        ----------
+        d_1 : int
+            Lower bound on the number of ones in the binary vector.
+        d_2 : int
+            Upper bound on the number of ones in the binary vector.
+        l : long long
+            Maximum number of iterations to generate hyperedges.
+
+    */
+    // psi.clear();
+    // int n2 = n / 2;
+
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> distrib_k(d_1, d_2);
+
+    for (long long i = 0; i < l; ++i) {
+        int j = distrib_k(gen);
+        // cout << "j: " << j << endl;
+        vector<uint8_t> e_bits(n, 0);
+        fill_n(e_bits.begin(), j, 1); // Set the first j elements to 1
+        shuffle(e_bits.begin(), e_bits.end(), gen);
+
+        vector<int> s_vec;
+        for (int bit_idx = 0; bit_idx < n; ++bit_idx) {
+            if (e_bits[bit_idx] == 1) {
+                s_vec.push_back(bit_idx);
+            }
+        }
+        // sort(s_vec.begin(), s_vec.end()); // Ensure the vector is sorted
+
+        if (intersection(s_vec)) {
+            psi.insert(s_vec);
+        }
+    }
+}
+
+void hypergraph::generate_random_comb_new_par(int d_1, int d_2, long long l) {
 
     /*
         Take as input two integer $d_1$ and $d_2$ such that $0 < d_1 < d_2 < n$.

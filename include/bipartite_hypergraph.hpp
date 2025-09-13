@@ -96,6 +96,7 @@ class hypergraph {
     void generate_random(const vector<int> &init, int n_1, int n_2, int l);
     void generate_random_comb(int d_1, int d_2, int l);
     void generate_random_comb_new(int d_1, int d_2, long long l);
+    void generate_random_comb_new_par(int d_1, int d_2, long long l);
     void generate_random_nonuniform(int d_1, int d_2, long long l);
     void generate_random_exponential(int d_1, int d_2, long long l,
                                      double lambda);
