@@ -69,10 +69,10 @@ void generate_random_save_comb(int V_min, int V_max, int step, int range,
 
         hypergraph g(n);
         auto ini = chrono::high_resolution_clock::now();
-		if (!parallel)
-			g.generate_random_comb_new(range, n - range, n_iter);
-		else
-			g.generate_random_comb_new_par(range, n - range, n_iter);
+        if (!parallel)
+            g.generate_random_comb_new(range, n - range, n_iter);
+        else
+            g.generate_random_comb_new_par(range, n - range, n_iter);
         auto fin = chrono::high_resolution_clock::now();
         double elapsed_time = chrono::duration<double>(fin - ini).count();
 
