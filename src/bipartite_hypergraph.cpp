@@ -875,15 +875,18 @@ void hypergraph::generate_random(const vector<int> &init, int n_1, int n_2,
         -------
         None.
     */
+    static thread_local mt19937 *generator = nullptr;
+    if (!generator) {
+        generator =
+            new mt19937(chrono::system_clock::now().time_since_epoch().count() +
+                        omp_get_thread_num());
+    }
+    uniform_int_distribution<int> distribution(n_1, n_2);
     psi.clear();
     psi.insert(init);
 
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> distrib_k(n_1, n_2);
-
     for (int i = 0; i < l; ++i) {
-        int k = distrib_k(gen);
+        int k = distribution(*generator);
 
         // cout << "k: " << k << endl;
         // vector<int> v(n);
@@ -913,15 +916,18 @@ void hypergraph::generate_random(const vector<int> &init, int n_1, int n_2,
 }
 
 void hypergraph::generate_random_comb(int d_1, int d_2, int l) {
+    static thread_local mt19937 *generator = nullptr;
+    if (!generator) {
+        generator =
+            new mt19937(chrono::system_clock::now().time_since_epoch().count() +
+                        omp_get_thread_num());
+    }
+    uniform_int_distribution<int> distribution(d_1, d_2);
     psi.clear();
     int n2 = n / 2;
 
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> distrib_k(d_1, d_2);
-
     for (int i = 0; i < l; ++i) {
-        int k = distrib_k(gen);
+        int k = distribution(*generator);
         int j = n2 + k;
 
         /*
@@ -931,7 +937,7 @@ void hypergraph::generate_random_comb(int d_1, int d_2, int l) {
         */
         vector<uint8_t> e_bits(n, 0);
         fill_n(e_bits.begin(), j, 1); // Set the first j elements to 1
-        shuffle(e_bits.begin(), e_bits.end(), gen);
+        shuffle(e_bits.begin(), e_bits.end(), *generator);
 
         vector<int> s_vec;
         for (int bit_idx = 0; bit_idx < n; ++bit_idx) {
@@ -970,19 +976,20 @@ void hypergraph::generate_random_comb_new(int d_1, int d_2, long long l) {
             Maximum number of iterations to generate hyperedges.
 
     */
-    // psi.clear();
-    // int n2 = n / 2;
-
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> distrib_k(d_1, d_2);
+    static thread_local mt19937 *generator = nullptr;
+    if (!generator) {
+        generator =
+            new mt19937(chrono::system_clock::now().time_since_epoch().count() +
+                        omp_get_thread_num());
+    }
+    uniform_int_distribution<int> distribution(d_1, d_2);
 
     for (long long i = 0; i < l; ++i) {
-        int j = distrib_k(gen);
+        int j = distribution(*generator);
         // cout << "j: " << j << endl;
         vector<uint8_t> e_bits(n, 0);
         fill_n(e_bits.begin(), j, 1); // Set the first j elements to 1
-        shuffle(e_bits.begin(), e_bits.end(), gen);
+        shuffle(e_bits.begin(), e_bits.end(), *generator);
 
         vector<int> s_vec;
         for (int bit_idx = 0; bit_idx < n; ++bit_idx) {
@@ -1018,21 +1025,22 @@ void hypergraph::generate_random_comb_new_par(int d_1, int d_2, long long l) {
             Upper bound on the number of ones in the binary vector.
         l : long long
             Maximum number of iterations to generate hyperedges.
-
     */
-    // psi.clear();
-    // int n2 = n / 2;
+    static thread_local mt19937 *generator = nullptr;
+    if (!generator) {
+        generator =
+            new mt19937(chrono::system_clock::now().time_since_epoch().count() +
+                        omp_get_thread_num());
+    }
+    uniform_int_distribution<int> distribution(d_1, d_2);
 
-    random_device rd;
-    mt19937 gen(rd());
-    uniform_int_distribution<> distrib_k(d_1, d_2);
-
+#pragma omp parallel for shared(psi)
     for (long long i = 0; i < l; ++i) {
-        int j = distrib_k(gen);
+        int j = distribution(*generator);
         // cout << "j: " << j << endl;
         vector<uint8_t> e_bits(n, 0);
         fill_n(e_bits.begin(), j, 1); // Set the first j elements to 1
-        shuffle(e_bits.begin(), e_bits.end(), gen);
+        shuffle(e_bits.begin(), e_bits.end(), *generator);
 
         vector<int> s_vec;
         for (int bit_idx = 0; bit_idx < n; ++bit_idx) {
@@ -1040,8 +1048,8 @@ void hypergraph::generate_random_comb_new_par(int d_1, int d_2, long long l) {
                 s_vec.push_back(bit_idx);
             }
         }
-        // sort(s_vec.begin(), s_vec.end()); // Ensure the vector is sorted
 
+#pragma omp critical(psiInsert)
         if (intersection(s_vec)) {
             psi.insert(s_vec);
         }
@@ -1075,31 +1083,35 @@ void hypergraph::generate_random_nonuniform(int d_1, int d_2, long long l) {
     int n2 = n / 2;
     int n4 = n / 4;
 
-    random_device rd;
-    mt19937 gen(rd());
-    discrete_distribution<> distrib_coin(
-        {0.50, 0.30, 0.20}); // Probabilities for choosing ranges
     int j;
+    static thread_local mt19937 *generator = nullptr;
+    if (!generator) {
+        generator =
+            new mt19937(chrono::system_clock::now().time_since_epoch().count() +
+                        omp_get_thread_num());
+    }
+    discrete_distribution<> discrete_distribution(
+        {0.50, 0.30, 0.20}); // Probabilities for choosing ranges
 
     for (long long i = 0; i < l; ++i) {
-        int coin = distrib_coin(gen);
+        int coin = discrete_distribution(*generator);
         if (coin == 0) {
             // Choose a random number between d_1 and n2
-            uniform_int_distribution<> distrib_k(d_1, n4);
-            j = distrib_k(gen);
+            uniform_int_distribution<int> distribution(d_1, n4);
+            j = distribution(*generator);
         } else if (coin == 1) {
             // Choose a random number between n2 and d_2
-            uniform_int_distribution<> distrib_k(n4, n2);
-            j = distrib_k(gen);
+            uniform_int_distribution<int> distribution(n4, n2);
+            j = distribution(*generator);
         } else {
             // Choose a random number between n2 and d_2
-            uniform_int_distribution<> distrib_k(n2, d_2);
-            j = distrib_k(gen);
+            uniform_int_distribution<int> distribution(n2, d_2);
+            j = distribution(*generator);
         }
         // cout << "j: " << j << endl;
         vector<uint8_t> e_bits(n, 0);
         fill_n(e_bits.begin(), j, 1); // Set the first j elements to 1
-        shuffle(e_bits.begin(), e_bits.end(), gen);
+        shuffle(e_bits.begin(), e_bits.end(), *generator);
 
         vector<int> s_vec;
         for (int bit_idx = 0; bit_idx < n; ++bit_idx) {
@@ -1154,21 +1166,19 @@ void hypergraph::generate_random_exponential(int d_1, int d_2, long long l,
      * is used internally for generating hyperedges of appropriate size and
      * creating bit vectors.
      */
-
-    // int n2 = n / 2;
-    // int n4 = n / 4;
-
-    random_device rd;
-    mt19937 gen(rd());
-    // double lambda = 1.9; // Rate parameter
-    exponential_distribution<> distrib(lambda);
     double value;
     int j;
+    static thread_local mt19937 *generator = nullptr;
+    if (!generator) {
+        generator =
+            new mt19937(chrono::system_clock::now().time_since_epoch().count() +
+                        omp_get_thread_num());
+    }
+    exponential_distribution<> distribution(lambda);
 
     for (long long i = 0; i < l; ++i) {
-
-        value = distrib(
-            gen); // Generate a random value from the exponential distribution
+        value = distribution(*generator); // Generate a random value from the
+                                          // exponential distribution
         j = static_cast<int>(round(value / 5 * (n - 2 * d_1))) +
             d_1; // Round to the nearest integer
         if (j > d_2) {
@@ -1177,7 +1187,7 @@ void hypergraph::generate_random_exponential(int d_1, int d_2, long long l,
         // cout << "j: " << j << endl;
         vector<uint8_t> e_bits(n, 0);
         fill_n(e_bits.begin(), j, 1); // Set the first j elements to 1
-        shuffle(e_bits.begin(), e_bits.end(), gen);
+        shuffle(e_bits.begin(), e_bits.end(), *generator);
 
         vector<int> s_vec;
         for (int bit_idx = 0; bit_idx < n; ++bit_idx) {
