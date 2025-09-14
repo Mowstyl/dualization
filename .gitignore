@@ -45,3 +45,4 @@
 
 # output
 *.csv
+saved_hypergraphs/testing/*
