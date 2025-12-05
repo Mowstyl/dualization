@@ -296,17 +296,20 @@ int main(int argc, char *argv[]) {
     }
 
     // generate_random_save_comb01(210, 260, 10, "hypergraph_random_poly_4n2_");
+    /*
     auto a = chrono::high_resolution_clock::now();
     generate_random_save_comb01(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]),
                                 argv[4]);
-    auto b = chrono::high_resolution_clock::now();
     double comb01_seq = chrono::duration<double>(b - a).count();
     cout << "---comb01_seq time: " << comb01_seq << endl;
+    */
+    auto b = chrono::high_resolution_clock::now();
     generate_random_save_comb01_par(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]),
                                     argv[4] + "par_"s);
     auto c = chrono::high_resolution_clock::now();
     double comb01_par = chrono::duration<double>(c - b).count();
     cout << "---comb01_par time: " << comb01_par << endl;
+    /*
     generate_random_save_comb(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), 3,
                               argv[4] + "u_"s, false);
     auto d = chrono::high_resolution_clock::now();
@@ -317,6 +320,7 @@ int main(int argc, char *argv[]) {
     auto e = chrono::high_resolution_clock::now();
     double comb_par = chrono::duration<double>(e - d).count();
     cout << "---comb_par time: " << comb_par << endl;
+    */
 
     return 0;
 }
