@@ -1021,7 +1021,6 @@ pair<bool, vector<uint8_t>> hypergraph::search_x_par(int world_rank, int world_s
                 int w_val = n - i;
                 if (evaluate_f(one_minus_x, w_val) == 0) {
                     found = true;
-                    cout << "[" << world_rank << "/" << world_size << "] Founda!";
                     break;
                 }
             } else {
@@ -1033,7 +1032,6 @@ pair<bool, vector<uint8_t>> hypergraph::search_x_par(int world_rank, int world_s
                     int w_val = n - i;
                     if (evaluate_f(one_minus_x, w_val) == 0) {
                         found = true;
-                        cout << "[" << world_rank << "/" << world_size << "] Founde!";
                         break;
                     }
                 }
@@ -1046,7 +1044,6 @@ pair<bool, vector<uint8_t>> hypergraph::search_x_par(int world_rank, int world_s
         MPI_Request *request = nullptr;
 
         if (found) {
-            cout << "[" << world_rank << "/" << world_size << "] Foundu!";
             request = (MPI_Request*) malloc(sizeof(MPI_Request) * world_size);
             for (int rank = 0; rank < world_size; rank++) {
                 MPI_Isend(&number, 1, MPI_INT, rank, 1, MPI_COMM_WORLD, request + rank);
