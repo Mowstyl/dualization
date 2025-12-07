@@ -24,6 +24,8 @@ project_include_dir = include_directories('include')
 
 cc = meson.get_compiler('cpp')
 
+mpi_dep =   dependency('mpi', language: 'c')
+
 lgmp_dep = dependency('libgmp', required : false)
 if not lgmp_dep.found()
   lgmp_dep = cc.find_library('gmp', required : true)
@@ -31,6 +33,7 @@ endif
 
 project_dependencies = [
   dependency('openmp'),
+  mpi_dep,
   lgmp_dep
 ]
 
