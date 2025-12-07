@@ -34,7 +34,7 @@ endif
 
 project_dependencies = [
   dependency('openmp'),
-#  mpi_dep,
+  mpi_dep,
   lgmp_dep
 ]
 

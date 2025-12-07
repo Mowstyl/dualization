@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <mpi.h>
 #include <random>
 #include <sstream>
 #include <string>
@@ -25,7 +26,7 @@ void write_csv_row(ofstream &file, const vector<string> &row) {
 
 // Implementation of the algorithm execution
 vector<string> execute_algorithm(int algorithm_num, bipartite_graph &b,
-                                 hypergraph &g) {
+                                 hypergraph &g, int world_rank, int world_size) {
     string name;
     double elapsed = 0.0;
     string output = "";
@@ -57,7 +58,7 @@ vector<string> execute_algorithm(int algorithm_num, bipartite_graph &b,
         output = oss.str();
     } else if (algorithm_num == 3) {
         name = "search x parallel";
-        auto search_result = g.search_x_par();
+        auto search_result = g.search_x_par(world_rank, world_size);
         ostringstream oss;
         oss << (search_result.first ? "self-dual" : "not self-dual");
         if (!search_result.first) {
@@ -93,23 +94,28 @@ vector<string> execute_algorithm(int algorithm_num, bipartite_graph &b,
         name = "sum_f";
         output = g.sum_f().get_str();
     } else {
-        cerr << "Unknown algorithm number: " << algorithm_num << endl;
+        if (world_rank == 0)
+            cerr << "Unknown algorithm number: " << algorithm_num << endl;
         return {};
     }
 
     auto end = chrono::high_resolution_clock::now();
     elapsed = chrono::duration<double>(end - start).count();
 
-    cout << name << ": " << elapsed << " " << output << endl;
+    if (world_rank == 0)
+        cout << name << ": " << elapsed << " " << output << endl;
     return {name, to_string(elapsed), output};
 }
 
-void run_multiple_test(const string &fname, const vector<string> &hypergraphs) {
-
-    ofstream csvFile(fname, ios::app);
-    if (!csvFile.is_open()) {
-        cerr << "Impossibile to open file " << fname << endl;
-        return;
+void run_multiple_test(const string &fname, const vector<string> &hypergraphs, int world_rank, int world_size) {
+    ofstream csvFile;
+    if (world_rank == 0) {
+        csvFile.open(fname, ios::app);
+        if (!csvFile.is_open()) {
+            if (world_rank == 0)
+                cerr << "Impossibile to open file " << fname << endl;
+            return;
+        }
     }
 
     hypergraph g(0);
@@ -120,9 +126,11 @@ void run_multiple_test(const string &fname, const vector<string> &hypergraphs) {
         int n = g.n;
         auto st = g.stat();
         bipartite_graph b(g.get_ordered_list_psi());
-        cout << "hypergraph : " << filename << endl;
-        cout << "Number of vertices: " << n
-             << "; Number of hyperedges : " << b.Edges.size() << endl;
+        if (world_rank == 0)
+            cout << "hypergraph : " << filename << endl;
+        if (world_rank == 0)
+            cout << "Number of vertices: " << n
+                 << "; Number of hyperedges : " << b.Edges.size() << endl;
 
         vector<string> row_head = {filename,
                                    datetime_string,
@@ -133,13 +141,16 @@ void run_multiple_test(const string &fname, const vector<string> &hypergraphs) {
                                    to_string(st["avg"])};
 
         for (int algorithm_num = 0; algorithm_num < 6; ++algorithm_num) {
-            auto row = execute_algorithm(algorithm_num, b, g);
+            if (algorithm_num != 3 && world_rank != 0)
+                continue;
+            auto row = execute_algorithm(algorithm_num, b, g, world_rank, world_size);
             vector<string> new_row = row_head;
             new_row.insert(new_row.end(), row.begin(), row.end());
             write_csv_row(csvFile, new_row);
         }
 
-        cout << "----------------------------------------" << endl;
+        if (world_rank == 0)
+            cout << "----------------------------------------" << endl;
     }
     csvFile.close();
 }
@@ -160,17 +171,26 @@ int main(int argc, char *argv[]) {
              << endl;
         return 0b00000001;
     }
+
+    MPI_Init(&argc, &argv);
+    int world_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
     int aux = argc - 1;
     string out_file = argv[argc - 1];
-    if (argc == 2 || !ends_with(out_file, ".csv")) {
-        const auto tp_utc{chrono::system_clock::now()};
-        auto in_time_t = chrono::system_clock::to_time_t(tp_utc);
-        stringstream ss;
+    if (world_rank == 0) {
+        if (argc == 2 || !ends_with(out_file, ".csv")) {
+            const auto tp_utc{chrono::system_clock::now()};
+            auto in_time_t = chrono::system_clock::to_time_t(tp_utc);
+            stringstream ss;
 
-        ss << put_time(localtime(&in_time_t), "%Y%m%d%H%M%S");
-        out_file = "test_" + ss.str() + ".csv";
-        cout << "Using default outfile: " << out_file << endl;
-        aux++;
+            ss << put_time(localtime(&in_time_t), "%Y%m%d%H%M%S");
+            out_file = "test_" + ss.str() + ".csv";
+            cout << "Using default outfile: " << out_file << endl;
+            aux++;
+        }
     }
     const vector<string> fnames(argv + 1, argv + aux);
     //{
@@ -178,7 +198,8 @@ int main(int argc, char *argv[]) {
     //    "../saved_hypergraphs/hypergraphs_r/hypergraph_random_2025_04_28_19_39_28_7.json",
     //    "../saved_hypergraphs/hypergraphs_r/hypergraph_random_2025_04_28_19_39_28_8.json"
     //};
-    run_multiple_test(out_file, fnames);
+    run_multiple_test(out_file, fnames, world_rank, world_size);
+    MPI_Finalize();
 
     return EXIT_SUCCESS;
 }

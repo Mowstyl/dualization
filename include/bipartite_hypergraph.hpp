@@ -91,7 +91,7 @@ class hypergraph {
     int evaluate_f(const vector<uint8_t> &x_vec, int &w);
     mpz_class sum_f();
     pair<bool, vector<uint8_t>> search_x();
-    pair<bool, vector<uint8_t>> search_x_par();
+    pair<bool, vector<uint8_t>> search_x_par(int world_rank, int world_size);
     vector<vector<int>> get_ordered_list_psi();
     vector<int> min_length_hyperedge();
     vector<int> max_length_hyperedge();

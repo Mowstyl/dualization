@@ -1,4 +1,5 @@
 #include "bipartite_hypergraph.hpp"
+#include <mpi.h>
 #include <omp.h>
 
 pair<vector<uint8_t>, int> mpz_to_bits(const mpz_class &num, int size) {
@@ -944,7 +945,7 @@ vector<int> ith_combination(int n, int k, unsigned long long i) {
     return result;
 }
 
-pair<bool, vector<uint8_t>> hypergraph::search_x_par() {
+pair<bool, vector<uint8_t>> hypergraph::search_x_par(int world_rank, int world_size) {
     /* This function searches for a binary vector x of length n such that
         f(x) = f(\overline{x}) = 0, where \overline{x} is the complement of x.
         It returns a pair containing a boolean indicating if such x exists and
@@ -984,24 +985,24 @@ pair<bool, vector<uint8_t>> hypergraph::search_x_par() {
     vector<int> range_n(n);
     iota(range_n.begin(), range_n.end(), 0);
 
+    MPI_Status status;
+    int flag;
+    bool found = false;
+    vector<uint8_t> out_x(n, 0);
+
     for (int i = 1; i <= w; ++i) {
-        volatile bool flag = false;
-        volatile bool exit = false;
-        vector<uint8_t> out_x(n, 0);
         unsigned long long num_combs = combinations(n, i);
-#pragma omp parallel for shared(exit, flag, out_x)
-        for (unsigned long long cid = 0; cid < num_combs; cid++) {
-            if (flag || exit)
-                continue;
+        for (unsigned long long cid = world_rank; cid < num_combs; cid+=world_size) {
+            if (flag == 1) {
+                break;
+            }
             vector<int> v_indices = ith_combination(n, i, cid);
 
             // Check if n is even and if we are at the half-way point.
             if (n % 2 == 0 && i == w && v_indices[0] != 0) {
-                flag = true;
-                continue;
+                break;
             }
 
-            vector<uint8_t> x(n, 0);
             for (int idx : v_indices) {
                 if (idx < 0 || idx >= n) {
                     cerr << "Error: índice fuera de rango " << idx
@@ -1009,43 +1010,73 @@ pair<bool, vector<uint8_t>> hypergraph::search_x_par() {
                          << endl;
                     abort();
                 }
-                x[idx] = 1;
+                out_x[idx] = 1;
             }
 
             if (i < min_len) {
                 vector<uint8_t> one_minus_x(n);
                 for (int k = 0; k < n; ++k) {
-                    one_minus_x[k] = 1 - x[k];
+                    one_minus_x[k] = 1 - out_x[k];
                 }
                 int w_val = n - i;
                 if (evaluate_f(one_minus_x, w_val) == 0) {
-#pragma omp critical(outXCopy)
-                    if (!exit) {
-                        exit = true;
-                        copy(x.begin(), x.end(), out_x.begin());
-                    }
+                    found = true;
+                    cout << "[" << world_rank << "/" << world_size << "] Founda!";
+                    break;
                 }
             } else {
-                if (evaluate_f(x, i) == 0) {
-                    // if (evaluate_f_old(x) == 0) {
+                if (evaluate_f(out_x, i) == 0) {
                     vector<uint8_t> one_minus_x(n);
                     for (int k = 0; k < n; ++k) {
-                        one_minus_x[k] = 1 - x[k];
+                        one_minus_x[k] = 1 - out_x[k];
                     }
                     int w_val = n - i;
                     if (evaluate_f(one_minus_x, w_val) == 0) {
-                        // if (evaluate_f_old(one_minus_x) == 0) {
-#pragma omp critical(outXCopy)
-                        if (!exit) {
-                            exit = true;
-                            copy(x.begin(), x.end(), out_x.begin());
-                        }
+                        found = true;
+                        cout << "[" << world_rank << "/" << world_size << "] Founde!";
+                        break;
                     }
                 }
             }
+
+            fill(out_x.begin(), out_x.end(), 0);
+            MPI_Iprobe(MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &flag, &status);
         }
-        if (exit)
-            return {false, out_x};
+        int number;
+        MPI_Request *request = nullptr;
+
+        if (found) {
+            cout << "[" << world_rank << "/" << world_size << "] Foundu!";
+            request = (MPI_Request*) malloc(sizeof(MPI_Request) * world_size);
+            for (int rank = 0; rank < world_size; rank++) {
+                MPI_Isend(&number, 1, MPI_INT, rank, 1, MPI_COMM_WORLD, request + rank);
+            }
+            flag = 1;
+        }
+
+        if (flag == 1) {
+            MPI_Recv(&number, 1, MPI_INT, MPI_ANY_SOURCE, 1, MPI_COMM_WORLD, &status);
+            if (request != nullptr) {
+                for (int rank = 0; rank < world_size; rank++) {
+                    MPI_Wait(request + rank, &status);
+                }
+                free(request);
+                request = nullptr;
+            }
+            if (!found && world_rank != 0) {
+                break;
+            }
+            if (found && world_rank != 0) {
+                MPI_Send(out_x.data(), n, MPI_INT, 0, 1, MPI_COMM_WORLD);
+                break;
+            }
+            if (world_rank == 0) {
+                if (!found) {
+                    MPI_Recv(out_x.data(), n, MPI_INT, status.MPI_SOURCE, 1, MPI_COMM_WORLD, &status);
+                }
+                return {false, out_x};
+            }
+        }
     }
     return {true, {}}; // Return true and an empty vector if no such x is found
 }
