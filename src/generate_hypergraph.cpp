@@ -34,60 +34,6 @@ vector<int> generate_random_hyperedges(int n, int size) {
     return s_vec;
 }
 
-void generate_random_save_comb(int V_min, int V_max, int step, int range,
-                               string prefix, bool parallel) {
-    /* *
-    This function generates and saves random hypergraphs using the
-    generate_random_comb method. For each n in [V_min, V_max] with the given
-    step, it creates a hypergraph with n vertices. The number of iterations is
-    2^(n+2) (exponential growth). Random hyperedges of sizes in [range, n-range]
-    are generated and the hypergraph is saved as a JSON file named with a
-    timestamp and n in DIR_PATH. After each generation, the function prints the
-    elapsed time and pauses for 1 second. PARAMETERS
-    ------------------------
-    V_min : int
-        Minimum number of vertices in the hypergraph.
-    V_max : int
-        Maximum number of vertices in the hypergraph.
-    step : int
-        Step size for the number of vertices.
-    range : int
-        Range for the size of the hyperedges.
-    prefix : string
-        Prefix for the filename of the saved hypergraph.
-    * */
-    int n_iter_exp = 2;
-
-    long long n_iter;
-
-    for (int n = V_min; n <= V_max; n += step) {
-        // Get current datetime as string
-        string datetime_string = get_datetime_string();
-        cout << "Generating hypergraph with " << n << " vertices..." << endl;
-
-        n_iter = 1L << (n + n_iter_exp); // Default value for n_iter
-
-        hypergraph g(n);
-        auto ini = chrono::high_resolution_clock::now();
-        if (!parallel)
-            g.generate_random_comb_new(range, n - range, n_iter);
-        else
-            g.generate_random_comb_new_par(range, n - range, n_iter);
-        auto fin = chrono::high_resolution_clock::now();
-        double elapsed_time = chrono::duration<double>(fin - ini).count();
-
-        ostringstream fname_oss;
-        fname_oss << prefix << datetime_string << "_" << n << ".json";
-        string fname = DIR_PATH + "/" + fname_oss.str();
-
-        g.save(fname);
-        cout << "Time: " << elapsed_time << endl;
-        cout << "Hyperedges: " << g.psi.size() << endl;
-        cout << "---------------------" << endl;
-        this_thread::sleep_for(chrono::seconds(1));
-    }
-}
-
 void generate_random_save_comb01(int V_min, int V_max, int step,
                                  string prefix) {
     /*
@@ -309,18 +255,6 @@ int main(int argc, char *argv[]) {
     auto c = chrono::high_resolution_clock::now();
     double comb01_par = chrono::duration<double>(c - b).count();
     cout << "---comb01_par time: " << comb01_par << endl;
-    /*
-    generate_random_save_comb(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), 3,
-                              argv[4] + "u_"s, false);
-    auto d = chrono::high_resolution_clock::now();
-    double comb_seq = chrono::duration<double>(d - c).count();
-    cout << "---comb_seq time: " << comb_seq << endl;
-    generate_random_save_comb(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), 3,
-                              argv[4] + "u_par_"s, true);
-    auto e = chrono::high_resolution_clock::now();
-    double comb_par = chrono::duration<double>(e - d).count();
-    cout << "---comb_par time: " << comb_par << endl;
-    */
 
     return 0;
 }

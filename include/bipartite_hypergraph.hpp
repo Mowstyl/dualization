@@ -72,7 +72,6 @@ class bipartite_graph {
     bool hitting_set(const vector<int> &s);
     pair<int, int> max_degree();
     int max_edge();
-    size_t count_vertices();
     void print_graph(const string &label = "");
 };
 
@@ -86,28 +85,13 @@ class hypergraph {
     hypergraph(int num_vars = 0);
 
     pair<bool, mpz_class> check_dimension();
-    void compute_values();
-    long long self_dual();
-    mpz_class self_dual_algorithms();
-    void count_covered();
-    void generate2(int k, const vector<int> &init_edge);
-    void generate_all(int k);
-    void generate_uniform();
-    void generate_random(const vector<int> &init, int n_1, int n_2, int l);
-    void generate_random_comb(int d_1, int d_2, int l);
-    void generate_random_comb_new(int d_1, int d_2, long long l);
-    void generate_random_comb_new_par(int d_1, int d_2, long long l);
-    void generate_random_nonuniform(int d_1, int d_2, long long l);
     void generate_random_exponential(int d_1, int d_2, long long l,
                                      double lambda);
     bool intersection(const vector<int> &s);
-    vector<long long> get_number_list();
     int evaluate_f(const vector<uint8_t> &x_vec, int &w);
     mpz_class sum_f();
     pair<bool, vector<uint8_t>> search_x();
     pair<bool, vector<uint8_t>> search_x_par();
-    bool check_counter_example(const vector<uint8_t> &x);
-    size_t count_vertices();
     vector<vector<int>> get_ordered_list_psi();
     vector<int> min_length_hyperedge();
     vector<int> max_length_hyperedge();
@@ -115,8 +99,6 @@ class hypergraph {
     void load(const string &fname);
     void load_uno_dat(const string &filename);
     map<string, double> stat();
-    void print_psi();
-    void print_bin_psi(bool compact = true);
 };
 
 void reduce_minimal(vector<vector<int>> &E);

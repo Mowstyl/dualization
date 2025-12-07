@@ -6,6 +6,7 @@ project(
 	'c_std=c17',
 	'cpp_std=c++17',
 #	'b_sanitize=address',
+#    'werror=true',
 	'buildtype=release',
 	'default_library=shared'
   ],
@@ -24,7 +25,7 @@ project_include_dir = include_directories('include')
 
 cc = meson.get_compiler('cpp')
 
-mpi_dep =   dependency('mpi', language: 'c')
+mpi_dep =   dependency('mpi', language: 'cpp')
 
 lgmp_dep = dependency('libgmp', required : false)
 if not lgmp_dep.found()
@@ -33,7 +34,7 @@ endif
 
 project_dependencies = [
   dependency('openmp'),
-  mpi_dep,
+#  mpi_dep,
   lgmp_dep
 ]
 
