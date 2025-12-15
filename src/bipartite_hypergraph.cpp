@@ -1031,9 +1031,9 @@ void hypergraph::generate_random_comb_new_par(int d_1, int d_2, long long l) {
     {
         static thread_local mt19937 *generator = nullptr;
         if (!generator) {
-            generator =
-                new mt19937(chrono::system_clock::now().time_since_epoch().count() +
-                            omp_get_thread_num());
+            generator = new mt19937(
+                chrono::system_clock::now().time_since_epoch().count() +
+                omp_get_thread_num());
         }
         uniform_int_distribution<int> distribution(d_1, d_2);
 
@@ -1053,9 +1053,8 @@ void hypergraph::generate_random_comb_new_par(int d_1, int d_2, long long l) {
             }
 
 #pragma omp critical(psiInsert)
-            if (intersection(s_vec)) {
+            if (intersection(s_vec))
                 psi.insert(s_vec);
-            }
         }
     }
 }
