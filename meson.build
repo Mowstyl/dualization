@@ -5,7 +5,7 @@ project(
     'warning_level=2',
 	'c_std=c17',
 	'cpp_std=c++17',
-#	'b_sanitize=address',
+	'b_sanitize=address',
 	'buildtype=release',
 	'default_library=shared'
   ],
@@ -35,14 +35,14 @@ project_dependencies = [
 ]
 
 build_args = [
-#  '-fsanitize=address',
-#  '-fno-omit-frame-pointer',
+  '-fsanitize=address',
+  '-fno-omit-frame-pointer',
   '-flto',
   '-march=native'
 ]
 
 linker_args = [
-#  '-fsanitize=address',
+  '-fsanitize=address',
 #  '-static-libasan',
   '-flto',
   '-lgmp',

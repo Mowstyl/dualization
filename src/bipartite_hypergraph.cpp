@@ -1026,32 +1026,36 @@ void hypergraph::generate_random_comb_new_par(int d_1, int d_2, long long l) {
         l : long long
             Maximum number of iterations to generate hyperedges.
     */
-    static thread_local mt19937 *generator = nullptr;
-    if (!generator) {
-        generator =
-            new mt19937(chrono::system_clock::now().time_since_epoch().count() +
-                        omp_get_thread_num());
-    }
-    uniform_int_distribution<int> distribution(d_1, d_2);
 
-#pragma omp parallel for shared(psi)
-    for (long long i = 0; i < l; ++i) {
-        int j = distribution(*generator);
-        // cout << "j: " << j << endl;
-        vector<uint8_t> e_bits(n, 0);
-        fill_n(e_bits.begin(), j, 1); // Set the first j elements to 1
-        shuffle(e_bits.begin(), e_bits.end(), *generator);
-
-        vector<int> s_vec;
-        for (int bit_idx = 0; bit_idx < n; ++bit_idx) {
-            if (e_bits[bit_idx] == 1) {
-                s_vec.push_back(bit_idx);
-            }
+#pragma omp parallel shared(psi)
+    {
+        static thread_local mt19937 *generator = nullptr;
+        if (!generator) {
+            generator =
+                new mt19937(chrono::system_clock::now().time_since_epoch().count() +
+                            omp_get_thread_num());
         }
+        uniform_int_distribution<int> distribution(d_1, d_2);
+
+#pragma omp for
+        for (long long i = 0; i < l; ++i) {
+            int j = distribution(*generator);
+            // cout << "j: " << j << endl;
+            vector<uint8_t> e_bits(n, 0);
+            fill_n(e_bits.begin(), j, 1); // Set the first j elements to 1
+            shuffle(e_bits.begin(), e_bits.end(), *generator);
+
+            vector<int> s_vec;
+            for (int bit_idx = 0; bit_idx < n; ++bit_idx) {
+                if (e_bits[bit_idx] == 1) {
+                    s_vec.push_back(bit_idx);
+                }
+            }
 
 #pragma omp critical(psiInsert)
-        if (intersection(s_vec)) {
-            psi.insert(s_vec);
+            if (intersection(s_vec)) {
+                psi.insert(s_vec);
+            }
         }
     }
 }
