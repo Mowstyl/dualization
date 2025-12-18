@@ -1053,8 +1053,58 @@ void hypergraph::generate_random_comb_new_par(int d_1, int d_2, long long l) {
             }
 
 #pragma omp critical(psiInsert)
-            if (intersection(s_vec))
+            if (intersection_par(s_vec))
                 psi.insert(s_vec);
+        }
+    }
+}
+
+void hypergraph::generate_random_comb_new_par2(int d_1, int d_2, long long l) {
+
+    /*
+     *       Take as input two integer $d_1$ and $d_2$ such that $0 < d_1 < d_2 < n$.
+     *       Generate random hyperedges for a random binary vector with a number of
+     *      ones between d_1 and d_2. The procedure generate a uniform random number
+     *      $d_1 \leq j \leq d_2$ and from that number $j$ determine a random binary
+     *      vector e_bits of dimension $n$ with $j$ ones. The hyperedge $e$ contains
+     *      a vertex $v$ iff e_bits[v]==1. The generated hyperedge is added to
+     *      self.psi provided the intersection property is satisfied. Such procedure
+     *      is iterated up to $l$ times.
+     *
+     *       Parameters
+     *       ----------
+     *       d_1 : int
+     *           Lower bound on the number of ones in the binary vector.
+     *       d_2 : int
+     *           Upper bound on the number of ones in the binary vector.
+     *       l : long long
+     *           Maximum number of iterations to generate hyperedges.
+     */
+    static thread_local mt19937 *generator = nullptr;
+    if (!generator) {
+        generator =
+        new mt19937(chrono::system_clock::now().time_since_epoch().count() +
+        omp_get_thread_num());
+    }
+    uniform_int_distribution<int> distribution(d_1, d_2);
+
+    for (long long i = 0; i < l; ++i) {
+        int j = distribution(*generator);
+        // cout << "j: " << j << endl;
+        vector<uint8_t> e_bits(n, 0);
+        fill_n(e_bits.begin(), j, 1); // Set the first j elements to 1
+        shuffle(e_bits.begin(), e_bits.end(), *generator);
+
+        vector<int> s_vec;
+        for (int bit_idx = 0; bit_idx < n; ++bit_idx) {
+            if (e_bits[bit_idx] == 1) {
+                s_vec.push_back(bit_idx);
+            }
+        }
+        // sort(s_vec.begin(), s_vec.end()); // Ensure the vector is sorted
+
+        if (intersection_par(s_vec)) {
+            psi.insert(s_vec);
         }
     }
 }
@@ -1228,6 +1278,49 @@ bool hypergraph::intersection(const vector<int> &s) {
     size_t ls = s.size();
 
     for (const auto &t : psi) {
+        // Both s and t are sorted
+        size_t i = 0, j = 0, count = 0;
+        while (i < ls && j < t.size()) {
+            if (s[i] < t[j]) {
+                ++i;
+            } else if (s[i] > t[j]) {
+                ++j;
+            } else {
+                ++count;
+                ++i;
+                ++j;
+            }
+        }
+        if (count == 0 || count == ls || count == t.size()) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool hypergraph::intersection_par(const vector<int> &s) {
+    /*
+     *       Determine if the intersection property is satisfied for s with
+     *       respect to this->psi. That is, if s intersects every set in this->psi
+     *      and does not contains any set in this->psi and is not contained in any
+     *       set in this->psi.
+     *       The set this->psi must be sorted by size and lexicographically .
+     *
+     *       Parameters
+     *       ----------
+     *       s : iterable
+     *           the set to be tested. It must be sorted in ascending order.
+     *
+     *       Returns
+     *       -------
+     *       bool
+     *           True if the intersection property is satisfied. False otherwise
+     */
+    size_t ls = s.size();
+
+#pragma parallel omp for shared(psi)
+    for (size_t idx = 0; idx < psi.size(); idx++) {
+        vector<int> t = *next(psi.begin(), idx);
         // Both s and t are sorted
         size_t i = 0, j = 0, count = 0;
         while (i < ls && j < t.size()) {

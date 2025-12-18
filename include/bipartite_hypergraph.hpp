@@ -97,10 +97,12 @@ class hypergraph {
     void generate_random_comb(int d_1, int d_2, int l);
     void generate_random_comb_new(int d_1, int d_2, long long l);
     void generate_random_comb_new_par(int d_1, int d_2, long long l);
+    void generate_random_comb_new_par2(int d_1, int d_2, long long l);
     void generate_random_nonuniform(int d_1, int d_2, long long l);
     void generate_random_exponential(int d_1, int d_2, long long l,
                                      double lambda);
     bool intersection(const vector<int> &s);
+    bool intersection_par(const vector<int> &s);
     vector<long long> get_number_list();
     int evaluate_f(const vector<uint8_t> &x_vec, int &w);
     mpz_class sum_f();

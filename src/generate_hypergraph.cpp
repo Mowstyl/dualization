@@ -35,7 +35,7 @@ vector<int> generate_random_hyperedges(int n, int size) {
 }
 
 void generate_random_save_comb(int V_min, int V_max, int step, int range,
-                               string prefix, bool parallel) {
+                               string prefix, bool parallel, bool second) {
     /* *
     This function generates and saves random hypergraphs using the
     generate_random_comb method. For each n in [V_min, V_max] with the given
@@ -71,8 +71,10 @@ void generate_random_save_comb(int V_min, int V_max, int step, int range,
         auto ini = chrono::high_resolution_clock::now();
         if (!parallel)
             g.generate_random_comb_new(range, n - range, n_iter);
-        else
+        else if (!second)
             g.generate_random_comb_new_par(range, n - range, n_iter);
+        else
+            g.generate_random_comb_new_par2(range, n - range, n_iter);
         auto fin = chrono::high_resolution_clock::now();
         double elapsed_time = chrono::duration<double>(fin - ini).count();
 
@@ -305,22 +307,28 @@ int main(int argc, char *argv[]) {
     cout << "---comb01_seq time: " << comb01_seq << endl;
     generate_random_save_comb01_par(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]),
                                     argv[4] + "par_"s);
-    auto c = chrono::high_resolution_clock::now();
     double comb01_par = chrono::duration<double>(c - b).count();
     cout << "---comb01_par time: " << comb01_par << endl;
     */
     /*
+    auto c = chrono::high_resolution_clock::now();
     generate_random_save_comb(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), 3,
-                              argv[4] + "u_"s, false);
+                              argv[4] + "u_"s, false, false);
     double comb_seq = chrono::duration<double>(d - c).count();
     cout << "---comb_seq time: " << comb_seq << endl;
     */
     auto d = chrono::high_resolution_clock::now();
     generate_random_save_comb(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), 3,
-                              argv[4] + "u_par_"s, true);
+                              argv[4] + "u_par_"s, true, false);
     auto e = chrono::high_resolution_clock::now();
     double comb_par = chrono::duration<double>(e - d).count();
     cout << "---comb_par time: " << comb_par << endl;
+    d = chrono::high_resolution_clock::now();
+    generate_random_save_comb(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), 3,
+                              argv[4] + "u_par2_"s, true, true);
+    e = chrono::high_resolution_clock::now();
+    double comb_par2 = chrono::duration<double>(e - d).count();
+    cout << "---comb_par2 time: " << comb_par2 << endl;
 
     return 0;
 }
